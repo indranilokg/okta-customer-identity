@@ -5,11 +5,12 @@ const router = express.Router();
 const request = require('request');
 require('dotenv').config();
 
+// Update view engine setup
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
-app.set('views', __dirname);
+app.set('views', path.join(__dirname)); // Ensure absolute path
 
-// Update middleware configuration
+// Middleware for parsing JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -31,19 +32,17 @@ const requireAuth = async (req, res, next) => {
     res.redirect('/login');
 };
 
-// Add the dashboard route
-app.get('/dashboard', function(req, res) {
-    res.render('dashboard.html');
-});
-
-// Update the root route to check auth status
+// Update route handlers to use sendFile instead of render
 router.get('/', function(req, res) {
-    res.render('index.html');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Update the login route to handle already authenticated users
 app.get('/login', function(req, res) {
-    res.render('login.html');
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+app.get('/dashboard', function(req, res) {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
 router.post('/enrollWebAuthn', function(req,res){

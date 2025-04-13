@@ -20,19 +20,11 @@
       "dest": "/auth.js"
     },
     {
+      "src": "/(login|dashboard|config)",
+      "dest": "/app.js"
+    },
+    {
       "src": "/",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/login",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/dashboard",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/config",
       "dest": "/app.js"
     },
     {
