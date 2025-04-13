@@ -1,0 +1,18 @@
+<svg width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
+    <!-- Shield shape for identity/security -->
+    <path d="M30 5 L35 8 L35 20 C35 28 30 32 20 38 C10 32 5 28 5 20 L5 8 L10 5 L20 2 L30 5" 
+          fill="#0073E6" />
+    <!-- Key hole -->
+    <path d="M20 14 A3 3 0 1 1 20 20 L20 24" 
+          stroke="white" 
+          stroke-width="2" 
+          fill="none" />
+    <!-- Text -->
+    <text x="45" y="25" 
+          font-family="Arial, sans-serif" 
+          font-size="16" 
+          font-weight="bold" 
+          fill="#0073E6">
+        Identity Demo
+    </text>
+</svg> 

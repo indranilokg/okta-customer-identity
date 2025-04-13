@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Okta Customer Identity Demo - Dashboard</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles.css">
+    
+    <!-- Scripts -->
+    <script src="https://global.oktacdn.com/okta-auth-js/7.5.1/okta-auth-js.min.js"></script>
+    <script src="/auth.js" defer></script>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    <header class="main-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/">
+                    <img src="/public/images/logo.svg" alt="Demo App" class="logo">
+                </a>
+            </div>
+            <div class="header-right">
+                <div class="user-menu">
+                    <span id="userEmail">Loading...</span>
+                    <button class="btn-link" onclick="logout()">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Welcome to Your Dashboard</h1>
+            <p class="subtitle">Manage your account and security settings</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Profile Information</h2>
+                </div>
+                <div class="card-content" id="profileContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Security Settings</h2>
+                </div>
+                <div class="card-content">
+                    <div class="security-options">
+                        <div class="security-item">
+                            <div class="security-info">
+                                <h3>Passkey</h3>
+                                <p>Enable passwordless sign-in with WebAuthn</p>
+                            </div>
+                            <button class="btn btn-outline" onclick="enrollWebauthnFromServer()">Setup Passkey</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card token-card">
+                <div class="card-header">
+                    <h2>Token Information</h2>
+                </div>
+                <div class="card-content">
+                    <div class="token-sections">
+                        <div class="token-section">
+                            <div class="token-header">
+                                <h3>ID Token</h3>
+                                <a id="idTokenLink" href="#" target="_blank" class="jwt-link">
+                                    View on JWT.io
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path d="M3.5 3.5L8.5 8.5M8.5 8.5V3.5M8.5 8.5H3.5" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                </a>
+                            </div>
+                            <div id="idToken" class="token-content">
+                                <pre class="token-data">Loading...</pre>
+                            </div>
+                        </div>
+
+                        <div class="token-section">
+                            <div class="token-header">
+                                <h3>Access Token</h3>
+                                <a id="accessTokenLink" href="#" target="_blank" class="jwt-link">
+                                    View on JWT.io
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path d="M3.5 3.5L8.5 8.5M8.5 8.5V3.5M8.5 8.5H3.5" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                </a>
+                            </div>
+                            <div id="accessToken" class="token-content">
+                                <pre class="token-data">Loading...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

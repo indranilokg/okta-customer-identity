@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Okta Customer Identity Demo</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles.css">
+    
+    <!-- Scripts -->
+    <script src="https://global.oktacdn.com/okta-auth-js/7.5.1/okta-auth-js.min.js"></script>
+    <script src="/auth.js" defer></script>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    <header class="main-header">
+        <div class="header-content">
+            <div class="header-left">
+                <img src="/public/images/logo.svg" alt="Demo App" class="logo">
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="#">Products</a></li>
+                        <li><a href="#">Solutions</a></li>
+                        <li><a href="#">Resources</a></li>
+                        <li><a href="#">Services</a></li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search">
+                    <button class="search-button">
+                        <img src="/public/images/search-icon.svg" alt="Search" width="24" height="24">
+                    </button>
+                </div>
+                <div class="header-controls">
+                    <button id="signInButton" class="btn-link dropdown-toggle">
+                        Sign In
+                        <svg class="dropdown-arrow" width="10" height="6" viewBox="0 0 10 6">
+                            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </button>
+                    <button class="btn-link">Contact</button>
+                    <select class="language-select">
+                        <option>EN</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-text-container">
+                    <h1>
+                        <span class="hero-line">Welcome to</span>
+                        <span class="hero-line">Okta Customer Identity Demo</span>
+                    </h1>
+                    <h2>Experience Secure Authentication</h2>
+                    <div class="hero-buttons">
+                        <button class="btn btn-outline">Learn More</button>
+                    </div>
+                </div>
+                <div class="hero-pattern"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About This Demo</h3>
+                <p>This demo showcases Okta's Customer Identity capabilities using direct SDK/API integration.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">API Reference</a></li>
+                    <li><a href="#">Developer Guide</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <ul>
+                    <li><a href="#">Support</a></li>
+                    <li><a href="#">Sales</a></li>
+                    <li><a href="#">Developer Forum</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Okta Inc. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Sign In Modal -->
+    <div id="signInModal" class="modal">
+        <div class="modal-content">
+            <div class="welcome-container">
+                <div class="account-options">
+                    <div class="button-container">
+                        <button class="btn btn-primary" onclick="showFullLoginPage()">Sign In</button>
+                        <button class="btn btn-secondary" onclick="window.location.href='/create-account'">Register</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple modal toggle
+        document.getElementById('signInButton').onclick = function() {
+            document.getElementById('signInModal').style.display = 'block';
+        }
+
+        // Close when clicking outside
+        window.onclick = function(event) {
+            var modal = document.getElementById('signInModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
