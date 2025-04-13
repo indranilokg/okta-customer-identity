@@ -14,13 +14,19 @@ app.set('views', path.join(__dirname)); // Ensure absolute path
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
+// Update static file serving
+app.use(express.static(path.join(__dirname)));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/styles.css', (req, res) => {
+app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
+
+// Specific route for styles.css
+app.get('/styles.css', (req, res) => {
     res.type('text/css');
     res.sendFile(path.join(__dirname, 'public', 'styles.css'));
 });
-app.use('/auth.js', (req, res) => {
+
+// Specific route for auth.js
+app.get('/auth.js', (req, res) => {
     res.type('application/javascript');
     res.sendFile(path.join(__dirname, 'auth.js'));
 });
