@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/public/(.*)",
+      "dest": "/public/$1"
+    },
+    {
+      "src": "/styles.css",
+      "dest": "/public/styles.css"
+    },
+    {
+      "src": "/auth.js",
+      "dest": "/auth.js"
+    },
+    {
+      "src": "/",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/login",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/config",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app.js"
+    }
+  ]
+} 

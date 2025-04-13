@@ -9,21 +9,19 @@ app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 app.set('views', __dirname);
 
-app.use(express.urlencoded());
-
+// Update middleware configuration
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Add this line to serve files from the public directory
+// Serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
-
 app.use('/styles.css', (req, res) => {
     res.type('text/css');
     res.sendFile(path.join(__dirname, 'public', 'styles.css'));
 });
-
-app.get('/auth.js', (req, res) => {
-  res.type('application/javascript');
-  res.sendFile(path.join(__dirname, 'auth.js'));
+app.use('/auth.js', (req, res) => {
+    res.type('application/javascript');
+    res.sendFile(path.join(__dirname, 'auth.js'));
 });
 
 // Add authentication middleware
@@ -136,10 +134,12 @@ app.get('/config', (req, res) => {
 app.use('/', router);
 
 // Update port configuration
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Running at Port ${port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Running at Port ${port}`);
+    });
+}
 
 // Export the Express API
 module.exports = app;
