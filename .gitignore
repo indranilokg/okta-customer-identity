@@ -4,7 +4,7 @@
 *.swp
 .env
 .env.*
-!.env.example
+!.env.template
 tmp/
 temp/
 
