@@ -14,33 +14,40 @@ app.set('views', path.join(__dirname)); // Ensure absolute path
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Update static file serving
-app.use(express.static(path.join(__dirname)));
+// Static file serving with explicit paths
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
 
-// Specific route for styles.css
-app.get('/styles.css', (req, res) => {
-    res.type('text/css');
-    res.sendFile(path.join(__dirname, 'public', 'styles.css'));
-});
-
-// Specific route for auth.js
+// Explicit routes for static files
 app.get('/auth.js', (req, res) => {
-    res.type('application/javascript');
-    res.sendFile(path.join(__dirname, 'auth.js'));
+    console.log('Serving auth.js from:', path.join(__dirname, 'auth.js')); // Add logging
+    res.set('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'auth.js'), (err) => {
+        if (err) {
+            console.error('Error serving auth.js:', err);
+            res.status(500).send('Error serving auth.js');
+        }
+    });
 });
 
-// Add authentication middleware
-const requireAuth = async (req, res, next) => {
-    // For now, we'll just redirect to login if no session
-    // In a real app, you'd want to verify the session/tokens
-    res.redirect('/login');
-};
+app.get('/styles.css', (req, res) => {
+    console.log('Serving styles.css from:', path.join(__dirname, 'public', 'styles.css')); // Add logging
+    res.set('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'public', 'styles.css'), (err) => {
+        if (err) {
+            console.error('Error serving styles.css:', err);
+            res.status(500).send('Error serving styles.css');
+        }
+    });
+});
 
-// Update route handlers to use sendFile instead of render
-router.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// HTML routes with error handling
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
+        if (err) {
+            console.error('Error serving index.html:', err);
+            res.status(500).send('Error serving index.html');
+        }
+    });
 });
 
 app.get('/login', function(req, res) {
@@ -138,6 +145,11 @@ app.get('/config', (req, res) => {
 //add the router
 app.use('/', router);
 
+// Add this near your other routes
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+});
+
 // Update port configuration
 if (process.env.NODE_ENV !== 'production') {
     const port = process.env.PORT || 3000;
@@ -145,6 +157,12 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`Running at Port ${port}`);
     });
 }
+
+// Add error handling
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).send('Something broke!');
+});
 
 // Export the Express API
 module.exports = app;

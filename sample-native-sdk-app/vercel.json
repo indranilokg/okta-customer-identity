@@ -4,28 +4,26 @@
     {
       "src": "app.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/public/images/(.*)",
-      "dest": "/public/images/$1"
-    },
-    {
-      "src": "/public/(.*)",
-      "dest": "/public/$1"
+      "src": "/auth.js",
+      "headers": {
+        "Content-Type": "application/javascript"
+      },
+      "dest": "/app.js"
     },
     {
       "src": "/styles.css",
-      "dest": "/public/styles.css"
+      "headers": {
+        "Content-Type": "text/css"
+      },
+      "dest": "/app.js"
     },
     {
-      "src": "/auth.js",
-      "dest": "/auth.js"
+      "src": "/public/(.*)",
+      "dest": "/app.js"
     },
     {
       "src": "/(login|dashboard|config)",
