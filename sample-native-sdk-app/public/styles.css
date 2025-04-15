@@ -21,6 +21,10 @@ body {
     flex-direction: column;
     position: relative;
     overflow-x: hidden;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .background-gradient {
@@ -189,6 +193,10 @@ body {
     background: transparent;
     border: 2px solid var(--primary-color);
     color: var(--primary-color);
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .btn-outline:hover {
@@ -538,6 +546,10 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .dashboard-header {
@@ -572,6 +584,10 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 .dashboard-card:hover {
@@ -593,12 +609,20 @@ body {
 
 .card-content {
     padding: 1.5rem;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .profile-info {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .info-item {
@@ -617,12 +641,21 @@ body {
     font-size: 1rem;
     color: var(--text-color);
     font-weight: 500;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    cursor: text;
 }
 
 .security-options {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 .security-item {
@@ -630,6 +663,13 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.security-info {
+    position: relative;
+    z-index: 1;
 }
 
 .security-info h3 {
@@ -670,18 +710,30 @@ body {
 /* Token Card Styles */
 .token-card {
     grid-column: 1 / -1;  /* Make token card full width */
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 .token-sections {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 .token-section {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 .token-header {
@@ -724,12 +776,21 @@ body {
 .token-content {
     background: #fff;
     padding: 1rem;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .token-data {
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    cursor: text;
 }
 
 .clickable {
@@ -750,4 +811,131 @@ body {
 .toggle-icon {
     padding: 4px;
     user-select: none;
+}
+
+.passkey-signin {
+    margin-bottom: 1.5rem;
+}
+
+.passkey-signin .btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.passkey-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+    padding: 0 1rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Base styles for text selection */
+body, 
+.dashboard-container,
+.dashboard-card,
+.card-content,
+.profile-info,
+.info-item,
+.security-options,
+.security-item,
+.security-info,
+.token-sections,
+.token-section,
+.token-content,
+.token-data {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    cursor: auto;
+}
+
+/* Fix z-index stacking and pointer events */
+.security-item {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+.security-info {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+/* Ensure buttons remain clickable but text isn't selectable */
+.btn,
+.btn-outline,
+.btn-link,
+.btn-primary,
+button {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* Make token data easily selectable */
+.token-data,
+.token-content pre {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    cursor: text;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Ensure profile information is selectable */
+.profile-info p,
+.info-item p,
+.security-info p {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    cursor: text;
+}
+
+/* Fix any overlapping elements that might interfere with selection */
+.dashboard-card {
+    position: relative;
+    z-index: 1;
+}
+
+.card-content {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+/* Ensure background elements don't interfere */
+.background-gradient {
+    pointer-events: none;
 } 

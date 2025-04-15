@@ -11,9 +11,44 @@
     
     <!-- Scripts -->
     <script src="https://global.oktacdn.com/okta-auth-js/7.5.1/okta-auth-js.min.js"></script>
-    <script src="/auth.js" defer></script>
+    <script src="/auth.js"></script>
+    <!-- Add test function in global scope -->
+    <script>
+        window.testClick = function() {
+            console.log('Test click function called');
+            alert('Button clicked!');
+        }
+    </script>
 </head>
 <body>
+    <script>
+        // Log that the script is running
+        console.log('Top of body script running');
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            
+            // Try to find the button
+            var button = document.getElementById('setupPasskey');
+            console.log('Found button:', button);
+            
+            if (button) {
+                // Add click listener
+                button.addEventListener('click', function() {
+                    console.log('Button clicked');
+                    alert('Button clicked!');
+                });
+                
+                // Also try direct onclick assignment
+                button.onclick = function() {
+                    console.log('Button onclick triggered');
+                    alert('Button onclick!');
+                };
+            }
+        });
+    </script>
+
     <div class="background-gradient"></div>
     <header class="main-header">
         <div class="header-content">
@@ -104,5 +139,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Add this before closing body tag -->
+    <script>
+        // Verify everything is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page fully loaded');
+            
+            // Add click listener programmatically as backup
+            const button = document.getElementById('passkeyButton');
+            if (button) {
+                console.log('Found passkey button');
+                button.addEventListener('click', function() {
+                    console.log('Button clicked through event listener');
+                    testClick();
+                });
+            } else {
+                console.error('Passkey button not found');
+            }
+        });
+    </script>
 </body>
 </html> 

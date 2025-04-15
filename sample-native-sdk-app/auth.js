@@ -4,7 +4,7 @@ let enrollmentClient = null;
 // Initialize auth with config from server
 async function initializeAuth() {
     if (authClient && authClient.tokenManager) {
-        return true; // Already initialized
+        return true;
     }
 
     try {
@@ -14,22 +14,17 @@ async function initializeAuth() {
         }
         const data = await response.json();
         
-        if (!data.clientConfig || !data.enrollmentConfig) {
+        if (!data.clientConfig) {
             throw new Error('Invalid config data received');
         }
 
-        // Initialize the auth clients
         authClient = new OktaAuth(data.clientConfig);
-        await authClient.start();  // Ensure auth client is fully started
-        
-        enrollmentClient = new OktaAuth(data.enrollmentConfig);
-        await enrollmentClient.start();  // Ensure enrollment client is fully started
+        await authClient.start();
 
         return true;
     } catch (error) {
         console.error('Failed to initialize auth:', error);
         authClient = null;
-        enrollmentClient = null;
         return false;
     }
 }
@@ -44,7 +39,6 @@ async function ensureAuth() {
 
 // Global variables
 let verifyEmailForEnrollment = false;
-let cachedPassword = null;
 let authenticatorEnrollmentsJSON = null;
 let activationData = null;
 
@@ -84,82 +78,66 @@ const render = async function() {
 
     try {
         if (window.location.pathname === '/dashboard') {
-            try {
-                const tokens = await authClient.tokenManager.getTokens();
-                
-                if (!tokens) {
-                    window.location.href = '/login';
-                    return;
-                }
+            const tokens = await authClient.tokenManager.getTokens();
+            
+            if (!tokens) {
+                window.location.href = '/login';
+                return;
+            }
 
-                // Update user email in header
-                if (tokens.idToken && tokens.idToken.claims) {
-                    document.getElementById('userEmail').textContent = tokens.idToken.claims.email || 'Unknown';
-                }
+            if (tokens.idToken && tokens.idToken.claims) {
+                document.getElementById('userEmail').textContent = tokens.idToken.claims.email || 'Unknown';
+            }
 
-                // Update profile content
-                if (document.getElementById('profileContent')) {
-                    document.getElementById('profileContent').innerHTML = `
-                        <div class="profile-info">
-                            <div class="info-item">
-                                <label>Email</label>
-                                <p>${tokens.idToken?.claims?.email || 'Not available'}</p>
-                            </div>
-                            <div class="info-item">
-                                <label>Name</label>
-                                <p>${tokens.idToken?.claims?.name || 'Not provided'}</p>
-                            </div>
+            if (document.getElementById('profileContent')) {
+                document.getElementById('profileContent').innerHTML = `
+                    <div class="profile-info">
+                        <div class="info-item">
+                            <label>Email</label>
+                            <p>${tokens.idToken?.claims?.email || 'Not available'}</p>
                         </div>
+                        <div class="info-item">
+                            <label>Name</label>
+                            <p>${tokens.idToken?.claims?.name || 'Not provided'}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (tokens.idToken) {
+                const idTokenElement = document.getElementById('idToken');
+                if (idTokenElement) {
+                    idTokenElement.innerHTML = `
+                        <pre class="token-data">${JSON.stringify(tokens.idToken.claims || {}, null, 2)}</pre>
                     `;
                 }
+            }
 
-                // Update token displays with null checks
-                if (tokens.idToken) {
-                    const idTokenElement = document.getElementById('idToken');
-                    const idTokenLink = document.getElementById('idTokenLink');
-                    if (idTokenElement && idTokenLink) {
-                        idTokenElement.innerHTML = `
-                            <pre class="token-data">${JSON.stringify(tokens.idToken.claims || {}, null, 2)}</pre>
-                        `;
-                        
-                        // Get raw token string
-                        const rawIdToken = tokens.idToken.value || tokens.idToken.idToken;
-                        idTokenLink.style.display = 'block';
-                        idTokenLink.style.position = 'relative';
-                        idTokenLink.style.zIndex = '1001';
-                        idTokenLink.style.pointerEvents = 'auto';
-                        idTokenLink.href = rawIdToken ? `https://jwt.io/#debugger-io?token=${rawIdToken}` : '#';
-                    }
+            if (tokens.accessToken) {
+                const accessTokenElement = document.getElementById('accessToken');
+                if (accessTokenElement) {
+                    accessTokenElement.innerHTML = `
+                        <pre class="token-data">${JSON.stringify(tokens.accessToken.claims || {}, null, 2)}</pre>
+                    `;
                 }
+            }
 
-                if (tokens.accessToken) {
-                    const accessTokenElement = document.getElementById('accessToken');
-                    const accessTokenLink = document.getElementById('accessTokenLink');
-                    if (accessTokenElement && accessTokenLink) {
-                        try {
-                            accessTokenElement.innerHTML = `
-                                <pre class="token-data">${JSON.stringify(tokens.accessToken.claims || {}, null, 2)}</pre>
-                            `;
-                            
-                            // Get raw token string
-                            const rawAccessToken = tokens.accessToken.value || tokens.accessToken.accessToken;
-                            accessTokenLink.style.display = 'block';
-                            accessTokenLink.style.position = 'relative';
-                            accessTokenLink.style.zIndex = '1001';
-                            accessTokenLink.style.pointerEvents = 'auto';
-                            accessTokenLink.href = rawAccessToken ? `https://jwt.io/#debugger-io?token=${rawAccessToken}` : '#';
-                        } catch (e) {
-                            // Handle error silently
-                        }
-                    }
+            // Add WebAuthn status check and button update
+            const hasWebAuthn = await checkWebAuthnStatus();
+            const securityButton = document.querySelector('.security-item .btn-outline');
+            if (securityButton) {
+                if (hasWebAuthn) {
+                    securityButton.textContent = 'Remove Passkey';
+                    securityButton.onclick = removeWebauthn;
+                } else {
+                    securityButton.textContent = 'Setup Passkey';
+                    securityButton.onclick = enrollWebauthnFromServer;
                 }
-
-            } catch (error) {
-                window.location.href = '/login';
             }
         }
     } catch (error) {
-        // Handle error silently
+        console.error('Error in render:', error);
+        window.location.href = '/login';
     }
 };
 
@@ -215,20 +193,11 @@ const createJwtIoUrl = (token) => {
 // Login function with token check
 const login = async function() {
     try {
-        // First check for existing valid tokens
-        const existingTokens = await authClient.tokenManager.getTokens();
-        
-        // If we have valid tokens, redirect to dashboard immediately
-        if (existingTokens && existingTokens.idToken && existingTokens.accessToken) {
-            // Verify token validity
-            const isValid = await authClient.isAuthenticated();
-            if (isValid) {
-                window.location.href = '/dashboard';
-                return;
-            }
+        if (!username.value || !password.value) {
+            alert('Both username and password are required');
+            return;
         }
         
-        // If no valid tokens, proceed with login
         const transaction = await authClient.idx.authenticate({ 
             username: username.value,
             password: password.value
@@ -236,142 +205,230 @@ const login = async function() {
 
         if (transaction.status === "SUCCESS" && transaction.tokens) {
             await authClient.tokenManager.setTokens(transaction.tokens);
-            
-            const storedTokens = await authClient.tokenManager.getTokens();
-            
-            if (storedTokens && storedTokens.idToken && storedTokens.accessToken) {
-                window.location.href = '/dashboard';
-            } else {
-                console.error('Token storage failed');
-            }   
+            window.location.href = '/dashboard';
         } else {
             console.error('Login failed:', transaction.status);
+            alert('Login failed: Invalid credentials');
         }
     } catch (error) {
         console.error('Login error:', error);
+        alert('Login error: ' + error.message);
     }
 };
 
-// Initiate webauthn enrollment
-const enrollWebauthn = async function() {
-  var transaction = await enrollmentClient.idx.startTransaction({ flow: 'authenticate' });
-  console.log(transaction);
-  transaction = await enrollmentClient.idx.proceed({ methodType: 'email' });
-  console.log(transaction);
-  verifyEmailForEnrollment = true;
-  render();
-};
 
 // Initiate webauthn enrollment - server side
-const enrollWebauthnFromServer = async function() {
+window.enrollWebauthnFromServer = async function() {
+    if (window.location.pathname !== '/dashboard') {
+        console.log('Not on dashboard, skipping WebAuthn enrollment');
+        return;
+    }
+
+    console.log('Starting WebAuthn enrollment...');
     try {
-        var enrollmentData;
-        
-        await fetch('http://localhost:3000/enrollWebAuthn', {
+        const button = document.querySelector('.security-item .btn-outline');
+        if (!button) {
+            console.log('Passkey button not found');
+            return;
+        }
+
+        const originalText = button.textContent;
+        button.textContent = 'Setting up...';
+        button.disabled = true;
+
+        const tokens = await authClient.tokenManager.getTokens();
+        if (!tokens || !tokens.idToken) {
+            window.location.href = '/';
+            return;
+        }
+
+        const enrollResponse = await fetch('/enrollWebAuthn', {
             method: 'POST',
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            enrollmentData = data;
-        })
-        .catch((err) => {
-            console.error(err.message);
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                userId: tokens.idToken.claims.sub
+            })
         });
 
-        const options = OktaAuth.webauthn.buildCredentialCreationOptions(enrollmentData._embedded.activation, enrollmentData._embedded.activation.excludeCredentials);
+        if (!enrollResponse.ok) {
+            throw new Error(`HTTP error! status: ${enrollResponse.status}`);
+        }
+
+        const enrollmentData = await enrollResponse.json();
+        console.log('Enrollment data received:', enrollmentData);
+
+        if (!enrollmentData._embedded?.activation) {
+            throw new Error('Invalid enrollment data received');
+        }
+
+        const options = OktaAuth.webauthn.buildCredentialCreationOptions(
+            enrollmentData._embedded.activation,
+            enrollmentData._embedded.activation.excludeCredentials
+        );
+        
+        console.log('Requesting credential creation...');
         const credential = await navigator.credentials.create(options);
+        
+        if (!credential) {
+            throw new Error('No credential received');
+        }
 
         const res = OktaAuth.webauthn.getAttestation(credential);
+        console.log('Attestation received');
 
-        const clientData = res.clientData;
-        const attestation = res.attestation;
-
-        const payload = JSON.stringify({
-            clientData: clientData,
-            attestation: attestation,
-            activationLink: enrollmentData._links.activate.href
+        const activateResponse = await fetch('/activateWebAuthn', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                clientData: res.clientData,
+                attestation: res.attestation,
+                activationLink: enrollmentData._links.activate.href
+            })
         });
 
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload
-        };
+        if (!activateResponse.ok) {
+            throw new Error(`HTTP error! status: ${activateResponse.status}`);
+        }
 
-        await fetch('http://localhost:3000/activateWebAuthn', requestOptions)
-            .then((response) => response.json())
-            .then((data) => {
-                console.log('Biometric enrollment successful');
-            })
-            .catch((err) => {
-                console.error(err.message);
-            });
+        console.log('WebAuthn enrollment successful');
+        button.textContent = 'Passkey Setup Complete';
+        button.disabled = true;
+        alert('Passkey setup successful!');
 
-        render();
+        await render();
     } catch (error) {
         console.error('Error in enrollWebauthnFromServer:', error);
+        
+        if (window.location.pathname === '/dashboard') {
+            const button = document.querySelector('.security-item .btn-outline');
+            if (button) {
+                button.textContent = 'Setup Passkey';
+                button.disabled = false;
+            }
+
+            if (error.name === 'NotAllowedError') {
+                console.log('User cancelled the WebAuthn operation');
+            } else if (!error.message.includes('Cannot read properties of null')) {
+                alert(`Failed to setup Passkey: ${error.message}`);
+            }
+        }
     }
 };
 
-const finishEnrollment = async function() {
-    try {
-        var transaction = await enrollmentClient.idx.authenticate({ verificationCode: enrollemailotp.value });
-        verifyEmailForEnrollment = false;
-        transaction = await enrollmentClient.idx.authenticate({ password: cachedPassword });
-        transaction = await enrollmentClient.idx.proceed({ authenticator: 'webauthn' });
-        const options = OktaAuth.webauthn.buildCredentialCreationOptions(transaction.nextStep.authenticator.contextualData.activationData, transaction.nextStep.authenticatorEnrollments);
-        const credential = await navigator.credentials.create(options);
-        const res = OktaAuth.webauthn.getAttestation(credential);
-        const clientData = res.clientData;
-        const attestation = res.attestation;
-        transaction = await enrollmentClient.idx.proceed({clientData, attestation});
-        transaction = await enrollmentClient.idx.proceed({skip: true});
-        console.log("Biometric enrollment successful");
-        
-        render();
-    } catch (error) {
-        console.error('Error in finishEnrollment:', error);
-    }
-};
 
 // Similarly update loginWithWebauthn
 const loginWithWebauthn = async function() {
     try {
+        console.log('Starting WebAuthn login...');
+        
         var transaction = await authClient.idx.authenticate({ 
-            username: username.value,
-            authenticators: ['webauthn']
+            authenticator: 'webauthn',
+            authenticatorMethod: 'webauthn',
+            username: username.value
         });
 
+        console.log('Initial transaction:', transaction);
+
+        if (!transaction.nextStep || 
+            !transaction.nextStep.authenticator || 
+            !transaction.nextStep.authenticator.contextualData || 
+            !transaction.nextStep.authenticator.contextualData.challengeData) {
+            throw new Error('WebAuthn authentication not available for this user');
+        }
+
+        const challengeData = transaction.nextStep.authenticator.contextualData.challengeData;
+        const authenticatorEnrollments = transaction.nextStep.authenticatorEnrollments;
+
+        console.log('Building credential request options...');
         const options = OktaAuth.webauthn.buildCredentialRequestOptions(
-            transaction.nextStep.authenticator.contextualData.challengeData, 
-            transaction.nextStep.authenticatorEnrollments
+            challengeData,
+            authenticatorEnrollments
         );
+
+        console.log('Requesting credential...');
         const credential = await navigator.credentials.get(options);
+        
+        if (!credential) {
+            throw new Error('No credential received');
+        }
+
+        console.log('Getting assertion...');
         const res = OktaAuth.webauthn.getAssertion(credential);
 
-        const clientData = res.clientData;
-        const authenticatorData = res.authenticatorData;
-        const signatureData = res.signatureData;
+        console.log('Proceeding with WebAuthn assertion...');
+        transaction = await authClient.idx.proceed({
+            clientData: res.clientData,
+            authenticatorData: res.authenticatorData,
+            signatureData: res.signatureData
+        });
 
-        transaction = await authClient.idx.proceed({clientData, authenticatorData, signatureData});
-        if (transaction.status == "SUCCESS") {
+        if (transaction.status === "SUCCESS") {
             await authClient.tokenManager.setTokens(transaction.tokens);
             window.location.href = '/dashboard';
         } else {
-            console.error("Authentication failed");
+            throw new Error("Authentication failed: " + transaction.status);
         }
     } catch (error) {
         console.error("Login error:", error);
+        throw error;
     }
 };
 
 // Update logout
 const logout = async function() {
     try {
+        console.log('Starting complete logout cleanup...');
+        
+        // Get tokens before clearing them (we might need them for revocation)
+        const tokens = await authClient.tokenManager.getTokens();
+        
+        // Clear local tokens first
         await authClient.tokenManager.clear();
+        
+        // Revoke tokens if we have them
+        if (tokens?.accessToken) {
+            try {
+                await authClient.revokeAccessToken(tokens.accessToken);
+            } catch (e) {
+                console.log('Error revoking access token:', e);
+            }
+        }
+
+        // Clear Okta session using signOut
+        await authClient.signOut({
+            clearTokensBeforeRedirect: true,  // Clear tokens before redirect
+            revokeAccessToken: true,          // Revoke access token
+            revokeRefreshToken: true,         // Revoke refresh token if present
+            postLogoutRedirectUri: window.location.origin // Redirect back to home
+        });
+
+        // Additional cleanup
+        localStorage.removeItem('okta-token-storage');
+        localStorage.removeItem('okta-cache-storage');
+        sessionStorage.removeItem('okta-token-storage');
+        sessionStorage.removeItem('okta-cache-storage');
+        
+        // Clear any Okta-related cookies
+        document.cookie.split(";").forEach(function(c) {
+            if (c.trim().startsWith('okta-')) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            }
+        });
+        
+        console.log('Logout cleanup completed');
+        
+        // Force reload to clear any remaining state
         window.location.href = '/';
     } catch (error) {
         console.error('Logout error:', error);
+        // Even if there's an error, try to redirect
+        window.location.href = '/';
     }
 };
 
@@ -394,8 +451,93 @@ const isAuthenticated = async function() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
-    await render();
+    try {
+        await render();
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
 });
 
+console.log('auth.js loaded');
+
+// Add this function to check WebAuthn enrollment status
+async function checkWebAuthnStatus() {
+    try {
+        const tokens = await authClient.tokenManager.getTokens();
+        if (!tokens || !tokens.idToken) {
+            return false;
+        }
+
+        const response = await fetch(`/checkWebAuthnStatus`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: tokens.idToken.claims.sub
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.hasWebAuthn;
+    } catch (error) {
+        console.error('Error checking WebAuthn status:', error);
+        return false;
+    }
+}
+
+// Add this function to remove WebAuthn
+async function removeWebauthn() {
+    if (window.location.pathname !== '/dashboard') {
+        return;
+    }
+
+    try {
+        const button = document.querySelector('.security-item .btn-outline');
+        if (!button) return;
+
+        const originalText = button.textContent;
+        button.textContent = 'Removing...';
+        button.disabled = true;
+
+        const tokens = await authClient.tokenManager.getTokens();
+        if (!tokens || !tokens.idToken) {
+            window.location.href = '/';
+            return;
+        }
+
+        const response = await fetch('/removeWebAuthn', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: tokens.idToken.claims.sub
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        button.textContent = 'Setup Passkey';
+        button.disabled = false;
+        button.onclick = enrollWebauthnFromServer;
+        
+        alert('Passkey removed successfully');
+    } catch (error) {
+        console.error('Error removing WebAuthn:', error);
+        const button = document.querySelector('.security-item .btn-outline');
+        if (button) {
+            button.textContent = 'Remove Passkey';
+            button.disabled = false;
+        }
+        alert('Failed to remove Passkey: ' + error.message);
+    }
+}
 
 // End of file 

@@ -33,6 +33,16 @@
                     <p class="login-subtitle">Sign in to your account</p>
                 </div>
 
+                <div class="passkey-signin">
+                    <button type="button" class="btn btn-outline sign-in-btn" onclick="loginWithPasskey()">
+                        <img src="/public/images/passkey-icon.svg" alt="Passkey" class="passkey-icon">
+                        Sign in with Passkey
+                    </button>
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                </div>
+
                 <form class="login-form">
                     <div class="input-group">
                         <label for="username">Email Address</label>
@@ -64,5 +74,37 @@
             </div>
         </div>
     </div>
+
+    <script>
+        async function loginWithPasskey() {
+            const emailInput = document.getElementById('username');
+            if (!emailInput.value) {
+                alert('Please enter your email address first');
+                emailInput.focus();
+                return;
+            }
+            
+            try {
+                const button = document.querySelector('.passkey-signin .btn');
+                const originalText = button.textContent;
+                button.textContent = 'Signing in...';
+                button.disabled = true;
+
+                await loginWithWebauthn();
+                
+                button.textContent = originalText;
+                button.disabled = false;
+            } catch (error) {
+                console.error('Passkey sign-in error:', error);
+                alert('Passkey sign-in failed: ' + error.message);
+                
+                const button = document.querySelector('.passkey-signin .btn');
+                if (button) {
+                    button.textContent = 'Sign in with Passkey';
+                    button.disabled = false;
+                }
+            }
+        }
+    </script>
 </body>
 </html> 

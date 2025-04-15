@@ -19,7 +19,6 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Explicit routes for static files
 app.get('/auth.js', (req, res) => {
-    console.log('Serving auth.js from:', path.join(__dirname, 'auth.js')); // Add logging
     res.set('Content-Type', 'application/javascript');
     res.sendFile(path.join(__dirname, 'auth.js'), (err) => {
         if (err) {
@@ -30,7 +29,6 @@ app.get('/auth.js', (req, res) => {
 });
 
 app.get('/styles.css', (req, res) => {
-    console.log('Serving styles.css from:', path.join(__dirname, 'public', 'styles.css')); // Add logging
     res.set('Content-Type', 'text/css');
     res.sendFile(path.join(__dirname, 'public', 'styles.css'), (err) => {
         if (err) {
@@ -58,11 +56,21 @@ app.get('/dashboard', function(req, res) {
     res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
-router.post('/enrollWebAuthn', function(req,res){
-  console.log("here");
+router.post('/enrollWebAuthn', function(req, res) {
+  console.log("Starting WebAuthn enrollment");
+  
+  // Get userId from request body
+  const userId = req.body.userId;
+  if (!userId) {
+    console.error('No userId provided');
+    return res.status(400).json({ error: 'No userId provided' });
+  }
+
+  console.log('Enrolling WebAuthn for user:', userId);
+
   var options = {
     'method': 'POST',
-    'url': `${process.env.OKTA_DOMAIN}/api/v1/users/00ulh2kj225GEecol1d7/factors`,
+    'url': `${process.env.OKTA_DOMAIN}/api/v1/users/${userId}/factors`,
     'headers': {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -74,43 +82,56 @@ router.post('/enrollWebAuthn', function(req,res){
     })
   };
 
-  request(options, function (error, response) {
-    if (error) throw new Error(error);
-    console.log(response.body);
+  request(options, function(error, response) {
+    if (error) {
+      console.error('Error enrolling WebAuthn:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    console.log('WebAuthn enrollment response received');
     res.send(response.body);
   });
 });
 
-router.post('/activateWebAuthn',function(req,res){
-  console.log(req.body);
-  const clientData = req.body.clientData;
-  const attestation  = req.body.attestation;
-  const activationLink  = req.body.activationLink;
-  console.log(clientData);
-  console.log(attestation);
-  console.log(activationLink);
-  
+router.post('/activateWebAuthn', function(req, res) {
+    try {
+        console.log('Activating WebAuthn...');
+        console.log('Request body:', req.body);
+        
+        const { clientData, attestation, activationLink } = req.body;
+        
+        if (!clientData || !attestation || !activationLink) {
+            return res.status(400).json({ 
+                error: 'Missing required fields' 
+            });
+        }
 
-  var options = {
-    'method': 'POST',
-    'url': activationLink,
-    'headers': {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`
-    },
-    body: JSON.stringify({
-      "attestation": attestation,
-      "clientData": clientData
-    })
-  };
+        var options = {
+            'method': 'POST',
+            'url': activationLink,
+            'headers': {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`
+            },
+            body: JSON.stringify({
+                attestation: attestation,
+                clientData: clientData
+            })
+        };
 
-  request(options, function (error, response) {
-    if (error) throw new Error(error);
-    console.log(response.body);
-    res.send(response.body);
-  });
-  
+        request(options, function(error, response) {
+            if (error) {
+                console.error('Error in activateWebAuthn:', error);
+                return res.status(500).json({ error: error.message });
+            }
+            
+            console.log('Activation response:', response.body);
+            res.send(response.body);
+        });
+    } catch (error) {
+        console.error('Error in activateWebAuthn:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Add this route before your other routes
@@ -140,6 +161,111 @@ app.get('/config', (req, res) => {
   };
 
   res.json({ clientConfig, enrollmentConfig });
+});
+
+// Add this route to check WebAuthn status
+router.post('/checkWebAuthnStatus', function(req, res) {
+    console.log("Checking WebAuthn status");
+    
+    const userId = req.body.userId;
+    if (!userId) {
+        return res.status(400).json({ error: 'No userId provided' });
+    }
+
+    var options = {
+        'method': 'GET',
+        'url': `${process.env.OKTA_DOMAIN}/api/v1/users/${userId}/factors`,
+        'headers': {
+            'Accept': 'application/json',
+            'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`
+        }
+    };
+
+    request(options, function(error, response) {
+        if (error) {
+            console.error('Error checking WebAuthn status:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        try {
+            const factors = JSON.parse(response.body);
+            const hasWebAuthn = factors.some(factor => 
+                factor.factorType === 'webauthn' && 
+                factor.status === 'ACTIVE'
+            );
+            res.json({ hasWebAuthn });
+        } catch (e) {
+            console.error('Error parsing factors response:', e);
+            res.status(500).json({ error: 'Error parsing factors response' });
+        }
+    });
+});
+
+// Add this route to remove WebAuthn
+router.post('/removeWebAuthn', function(req, res) {
+    console.log("Removing WebAuthn");
+    
+    const userId = req.body.userId;
+    if (!userId) {
+        return res.status(400).json({ error: 'No userId provided' });
+    }
+
+    // First get the factors to find the WebAuthn factor ID
+    var getOptions = {
+        'method': 'GET',
+        'url': `${process.env.OKTA_DOMAIN}/api/v1/users/${userId}/factors`,
+        'headers': {
+            'Accept': 'application/json',
+            'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`
+        }
+    };
+
+    request(getOptions, function(error, response) {
+        if (error) {
+            console.error('Error getting factors:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        try {
+            const factors = JSON.parse(response.body);
+            const webAuthnFactor = factors.find(factor => 
+                factor.factorType === 'webauthn' && 
+                factor.status === 'ACTIVE'
+            );
+
+            if (!webAuthnFactor) {
+                return res.status(404).json({ error: 'No active WebAuthn factor found' });
+            }
+
+            // Now delete the factor
+            var deleteOptions = {
+                'method': 'DELETE',
+                'url': `${process.env.OKTA_DOMAIN}/api/v1/users/${userId}/factors/${webAuthnFactor.id}`,
+                'headers': {
+                    'Accept': 'application/json',
+                    'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`
+                }
+            };
+
+            request(deleteOptions, function(deleteError, deleteResponse) {
+                if (deleteError) {
+                    console.error('Error deleting WebAuthn factor:', deleteError);
+                    return res.status(500).json({ error: deleteError.message });
+                }
+
+                if (deleteResponse.statusCode === 204) {
+                    res.json({ success: true });
+                } else {
+                    res.status(deleteResponse.statusCode).json({ 
+                        error: 'Failed to delete WebAuthn factor' 
+                    });
+                }
+            });
+        } catch (e) {
+            console.error('Error parsing factors response:', e);
+            res.status(500).json({ error: 'Error parsing factors response' });
+        }
+    });
 });
 
 //add the router
