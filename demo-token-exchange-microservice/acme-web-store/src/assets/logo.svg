@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shopping bag shape -->
+  <path d="M36 16H12C10.8954 16 10 16.8954 10 18V38C10 39.1046 10.8954 40 12 40H36C37.1046 40 38 39.1046 38 38V18C38 16.8954 37.1046 16 36 16Z" 
+        stroke="currentColor" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Handle -->
+  <path d="M16 16V12C16 8.68629 18.6863 6 22 6H26C29.3137 6 32 8.68629 32 12V16" 
+        stroke="currentColor" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- "A" letter -->
+  <path d="M20 24H28M24 20V32" 
+        stroke="currentColor" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+</svg> 
