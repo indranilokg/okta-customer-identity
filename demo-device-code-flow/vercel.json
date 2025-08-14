@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "name": "okta-device-code-flow-demo",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/okta/(.*)",
+      "dest": "/api/proxy.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_OKTA_ISSUER": "@okta_issuer",
+    "REACT_APP_OKTA_CLIENT_ID": "@okta_client_id"
+  },
+  "functions": {
+    "api/proxy.js": {
+      "maxDuration": 10
+    }
+  }
+} 
