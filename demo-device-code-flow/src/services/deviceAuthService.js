@@ -247,4 +247,6 @@ class DeviceAuthService {
   }
 }
 
-export default new DeviceAuthService(); 
+// Create and export instance
+const deviceAuthService = new DeviceAuthService();
+export default deviceAuthService; 

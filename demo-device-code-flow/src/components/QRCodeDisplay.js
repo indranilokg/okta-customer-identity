@@ -229,17 +229,9 @@ const DebugUrl = styled.div`
   border-radius: 4px;
 `;
 
-const QRCodeDisplay = ({ 
-  userCode, 
-  verificationUri, 
-  verificationUriComplete, 
-  expiresIn,
-  onCopyCode,
-  onCopyLink,
-  onStartPolling 
-}) => {
+const QRCodeDisplay = ({ userCode, verificationUri, verificationUriComplete, expiresIn, onCopyCode, onCopyLink, onStartPolling }) => {
   const [timeRemaining, setTimeRemaining] = useState(expiresIn);
-  const [showDebug, setShowDebug] = useState(true);
+  const showDebug = true; // Set to false to hide debug info
 
   useEffect(() => {
     const timer = setInterval(() => {
